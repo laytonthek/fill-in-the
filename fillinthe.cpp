@@ -416,16 +416,6 @@ void answerScreen(Story& display, Wiki& current_library) {
     }
 }
 
-bool explanationScreen(string type) {
-
-    cls();
-    cout << "<WIKI - " << endl;
-    cout << endl;
-
-    pause();
-    return true;
-}
-
 void savedScreen() {
 
     string current_prompt;
@@ -555,7 +545,7 @@ int main() {
         exit(1);
     }
     
-    pages = (ID_COUNTER + 9 - 1) / 9;
+    pages = (ID_COUNTER + 10 - 1) / 10;
     page = 1;
 
     do
