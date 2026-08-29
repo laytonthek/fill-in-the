@@ -1,17 +1,53 @@
 hello! I'm terrible at instructions so please read all of them.
 
-to make content, add a desired story's filename.SRY to master.list in a new line and make sure it has .SRY at the end of it.
+To make your own story content:
 
-a story MUST have its title on the first line. and it MUST be setup to have 3 paragraphs of 6 lines,
+create two files: filename.SRY and filename.ANS replacing "filename" with your desired filename
 
-80 characters max PER LINE!
+open master.list and add filename.SRY to a new line and save.
 
-the 80 character limit INCLUDES user typed answers, which I usually assume don't exceed 10 characters.
+open filename.SRY, put your title on the first line.
+IMPORTANT: LEAVE A BLANK LINE AFTER THE TITLE LINE
+the code is designed to read the story as 3 paragraphs, with 6 lines each, and 80 character limit per line.
+IMPORTANT: PLEASE FORMAT AS FOLLOWS
+6 lines of story
+BLANK LINE
+6 lines of story
+BLANK LINE
+6 lines of story
 
-so basically your story should have 25 lines, one for title and 24 for the story (3 paragraphs, 6 lines each).
+it should look like this
 
-then make your answers by making a text file called the same name as your story file but with .ANS
-each line is an answer type identifier
+title
+
+paragraph 1 line 1
+paragraph 1 line 2
+paragraph 1 line 3
+paragraph 1 line 4
+paragraph 1 line 5
+paragraph 1 line 6
+
+paragraph 2 line 1
+paragraph 2 line 2
+paragraph 2 line 3
+paragraph 2 line 4
+paragraph 2 line 5
+paragraph 2 line 6
+
+paragraph 3 line 1
+paragraph 3 line 2
+paragraph 3 line 3
+paragraph 3 line 4
+paragraph 3 line 5
+paragraph 3 line 6
+
+Put @ symbols where you want your blanks to be, you MUST ALWAYS USE 12! (content consistency)
+
+blanks are where the user is going to fill in their own words, the software calls them "answers"
+
+now open filename.ANS and on 12 lines put any combination of these answer type identifiers
+(but obviously, make sure it makes sense with your story, as the answer type that is being
+asked for will change how the software prompts the user to fill in the blank)
 
 here is the list of answer type identifiers:
 noun
@@ -25,9 +61,5 @@ verbing
 adverb
 adjective
 
-you have to make 12 answers, no less and no more. these rules are to make all content fit in an MS-DOS terminal nicely
-when I get around to porting it
-
-in your story, put an @ symbol where you want the software to put each answer.
-
-my software should handle the rest
+The reason for all these specific limits, rules and formatting is because the intention of this software is to be ported to
+MS-DOS and I want it to fit in a 80x24 console nicely and all the content to be easy to move and the game to be THAT cross-platform lol
