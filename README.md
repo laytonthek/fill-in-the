@@ -1,4 +1,7 @@
 hello! I'm terrible at instructions so please read all of them.
+also please actually view this readme in a text editor
+with word wrapping turned off, because github made my instructions not
+make sense, go figure
 
 To make your own story content:
 
