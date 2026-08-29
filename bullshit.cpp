@@ -8,7 +8,7 @@
 using namespace std;
 
 unsigned int ID_COUNTER;
-string VER = "Beta v3.3.0";
+string VER = "Beta v3.3.1";
 string TITLE = "Fill in the $#&%@!";
 string LONGTITLE = "" + TITLE + " (" + VER + ")";
 string COPYRIGHT = "Developed by Layton Kinyon. August 2026";
@@ -258,8 +258,9 @@ int main() {
         }
         catch (const std::invalid_argument&) {}
         catch (const std::out_of_range&) {}
-        if (selection == 1)
-            answerScreen(listing[0]);
+        
+        if ((selection > 0) and (selection <= ID_COUNTER))
+            answerScreen(listing[selection-1]);
     selection = 0;
     } while (choice != "quit");
 
