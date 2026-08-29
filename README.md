@@ -1,6 +1,6 @@
-hello! 
+hello! I'm terrible at instructions so please read all of them.
 
-to make content, add a story to master.list in a new line and make sure it has .SRY at the end of it.
+to make content, add a desired story's filename.SRY to master.list in a new line and make sure it has .SRY at the end of it.
 
 a story MUST have its title on the first line. and it MUST be setup to have 3 paragraphs of 6 lines,
 
@@ -13,7 +13,7 @@ so basically your story should have 25 lines, one for title and 24 for the story
 then make your answers by making a text file called the same name as your story file but with .ANS
 each line is an answer type identifier
 
-here is the list:
+here is the list of answer type identifiers:
 noun
 proper_noun
 nouns
@@ -26,6 +26,7 @@ adverb
 adjective
 
 you have to make 12 answers, no less and no more. these rules are to make all content fit in an MS-DOS terminal nicely
+when I get around to porting it
 
 in your story, put an @ symbol where you want the software to put each answer.
 
