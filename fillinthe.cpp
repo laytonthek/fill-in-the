@@ -6,10 +6,19 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <vector>
 using namespace std;
 
+/*
+Version 4 of Fill in the $#&%@! is here!
+
+This is a major update as it adds a beautiful title screen and gives the ability to make your own stories! 
+the user-made stories are automatically added to master.list and added to the main menu upon creation so 
+they can be immediately played without configuration!
+*/
+
 unsigned int ID_COUNTER;
-string VER = "Beta v3.3.3";
+string VER = "Beta v4";
 string TITLE = "Fill in the $#&%@!";
 string LONGTITLE = "" + TITLE + " (" + VER + ")";
 string COPYRIGHT = "Developed by Layton Kinyon. August 2026";
@@ -21,6 +30,10 @@ void cls() {
 
 void sleep(unsigned int seconds) {
     std::this_thread::sleep_for(std::chrono::seconds(seconds)); // Makes console wait for x seconds
+}
+
+void msleep(unsigned int milliseconds) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
 }
 
 void nlclr() {std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');}
@@ -59,6 +72,7 @@ bool writeFile(string filename, ostringstream& buffer) {
 
             cout << "\n saving failed...";
             pause();
+            return false;
 
         } else {
 
@@ -80,6 +94,17 @@ bool replaceFirst(std::string& str, const std::string& from, const std::string& 
 
         return false;
     }
+}
+
+int countString(const std::string& str, const std::string& sub) {
+    if (sub.empty()) return 0;
+    int count = 0;
+    size_t pos = 0;
+    while ((pos = str.find(sub, pos)) != std::string::npos) {
+        ++count;
+        pos += sub.length(); // Move past this match for non-overlapping
+    }
+    return count;
 }
 
 class Story {
@@ -284,7 +309,7 @@ void storyScreen(Story& display) {
     cout << endl;
     for (int x = 0; x < 6; x++)
         cout << display.chaosline[x].data << endl;
-    sleep(3);
+    msleep(1777);
 
     string prompt;
 
@@ -326,7 +351,6 @@ void storyScreen(Story& display) {
         if (!flag) {
 
             cout << "\n   error saving file...";
-            nlclr();
             pause();
         }
     }
@@ -351,7 +375,7 @@ void wikiScreen(Wiki::WikiItem& current_item) {
     return;
 }
 
-void answerScreen(Story& display, Wiki& current_library) {
+void answerScreen(Story& on_display, Wiki& current_library) {
 
     string current_prompt;
 
@@ -359,17 +383,18 @@ void answerScreen(Story& display, Wiki& current_library) {
 
     for (int x = 0; x < 12; x++) {                                           
 
-        bufferWiki(current_library.buffer, display.answer[x].type);
+        bufferWiki(current_library.buffer, on_display.answer[x].type);
 
         cls();
-        cout << display.heading << "\n";
+        cout << on_display.heading << "\n";
         cout << "type 'WIKI' in all caps for an explanation";
 
-        cout << endl << display.answer[x].label << ": ";
+        cout << endl << on_display.answer[x].label << ": ";
         getline(cin, current_prompt);
+        msleep(111);
         if (current_prompt != "WIKI") {
             
-            display.answer[x].data = current_prompt; //need to fix bug where input is only one word, need to be able to have whitespace
+            on_display.answer[x].data = current_prompt; //need to fix bug where input is only one word, need to be able to have whitespace
 
         } else {
 
@@ -381,36 +406,36 @@ void answerScreen(Story& display, Wiki& current_library) {
     int current = 0;
 
     for (int x = 0; x < 6; x++)
-        while (replaceFirst(display.hookline[x].data, "@", display.answer[current].data) and current < 12) {current++;}
+        while (replaceFirst(on_display.hookline[x].data, "@", on_display.answer[current].data) and current < 12) {current++;}
 
     for (int x = 0; x < 6; x++)
-        while (replaceFirst(display.problemline[x].data, "@", display.answer[current].data) and current < 12) {current++;}
+        while (replaceFirst(on_display.problemline[x].data, "@", on_display.answer[current].data) and current < 12) {current++;}
 
     for (int x = 0; x < 6; x++)
-        while (replaceFirst(display.chaosline[x].data, "@", display.answer[current].data) and current <12) {current++;}
+        while (replaceFirst(on_display.chaosline[x].data, "@", on_display.answer[current].data) and current <12) {current++;}
 
-    storyScreen(display);
+    storyScreen(on_display);
 
     for (int x = 0; x < 12; x++)
-        display.answer[x].data.clear();
+        on_display.answer[x].data.clear();
 
     for (int x = 0; x < 18; x++) {
 
         for (int y = 0; y < 6; y++) {
 
-            display.hookline[y].data = display.backupline[x].data;
+            on_display.hookline[y].data = on_display.backupline[x].data;
             x++;
         }
 
         for (int y = 0; y < 6; y++) {
 
-            display.problemline[y].data = display.backupline[x].data;
+            on_display.problemline[y].data = on_display.backupline[x].data;
             x++;
         }
 
         for (int y = 0; y < 6; y++) {
 
-            display.chaosline[y].data = display.backupline[x].data;
+            on_display.chaosline[y].data = on_display.backupline[x].data;
             x++;
         }
     }
@@ -485,7 +510,195 @@ void wikiMenu(Wiki& current_library) {
     return;
 }
 
+void titleScreen() {
+
+    cls();
+
+    int title_length = LONGTITLE.length();
+    int copyright_length = COPYRIGHT.length();
+
+    cout << "\n\n\n\n\n\n\n\n\n\n";
+
+    int t_start_pos = 40 - (title_length / 2);
+    int c_start_pos = 40 - (copyright_length / 2);
+
+    int box_length = copyright_length + 4;
+    int b_start_pos = 40 - (box_length / 2);
+
+    for (int x = 0; x < b_start_pos; x++)
+        cout << " ";
+        
+    for (int x = 0; x < box_length; x++)
+        cout << "=";
+
+    cout << endl;
+
+    for (int x = 0; x < c_start_pos - 2; x++)
+        cout << " ";
+
+    cout << "| ";
+
+    for (int x = c_start_pos - 2; x < t_start_pos - 2; x++)
+        cout << " ";
+        
+    cout << LONGTITLE;
+
+    for (int x = t_start_pos + title_length; x < c_start_pos + copyright_length; x++)
+        cout << " ";
+
+    cout << " |" << endl;
+        
+    for (int x = 0; x < c_start_pos - 2; x++)
+        cout << " ";
+
+    cout << "| " << COPYRIGHT << " |" << endl;
+
+    for (int x = 0; x < b_start_pos; x++)
+        cout << " ";
+        
+    for (int x = 0; x < box_length; x++)
+        cout << "=";
+
+    cout << endl;
+    cout << endl;
+
+    sleep(4);
+
+    return;
+}
+
+Story makeScreen() {
+
+    string title;
+    string line[18];
+    string filename;
+    string answer_type[12];
+
+    int at_checker = 0;
+    string dummy;
+
+    cls();
+
+    cout << "Type filename (WITHOUT THE EXTENSION): ";
+    cin >> filename;
+
+    cls();
+
+    cout << "Come up with a title for your story. Keep in mind this title shows up both\nat the top of your story and in the main menu.\n\nTitle: ";
+    cin.ignore();
+    getline(cin, title);
+
+    cls();
+
+    cout << "READ ME IF YOURE NEW TO MAKING STORIES!" << endl;
+    cout << endl;
+    cout << "your story MUST be 18 lines, press ENTER at the end of each line to ensure proper formatting." << endl;
+    cout << "those 18 lines will be grouped into 3 paragraphs of 6 lines each." << endl;
+    cout << endl;
+    cout << "use the @ symbol to insert places for answers to be written in. THERE MUST BE 12 IN YOUR STORY!" << endl;
+    cout << "NO MORE, NO LESS, NO EXCEPTIONS! this is for proper formatting\nfor all the old systems I'm porting to later\n"
+    cout << "IF YOU DONT HAVE 12 @ PROGRAM WONT CONTINUE!\n\n";
+    cout << "Press ENTER to continue...";
+    getline(cin, dummy);
+
+    ostringstream s_buffer;
+
+    cls();
+    cout << title << endl;
+    s_buffer << title << endl << endl;
+    cout << endl;
+    for (int x = 0; x < 6; x++) {  
+
+        cout << x + 1 << ">";
+        getline(cin, line[x]);
+        s_buffer << line[x] << endl;
+    }
+    cout << endl;
+    s_buffer << endl;
+    for (int x = 6; x < 12; x++) {
+
+        cout << x + 1 << ">";
+        getline(cin, line[x]);
+        s_buffer << line[x] << endl;
+    }
+    cout << endl;
+    s_buffer << endl;
+    for (int x = 12; x < 18; x++) {
+
+        cout << x + 1 << ">";
+        getline(cin, line[x]);
+        s_buffer << line[x] << endl;
+    }
+
+    for (int x = 0; x < 18; x++) {
+
+        at_checker = at_checker + countString(line[x], "@");
+    }
+
+    if (at_checker != 12) {
+        cls();
+        cout << "you really need to read the instructions, or count your @'s!\nThere's content guidelines, you know...";
+        sleep(5);
+        cout << "";
+        cout << "";
+        cout << "";
+        cout << "";
+        cout << "this should teach you.";
+        exit(1);
+    }
+    
+    cls();
+    cout << "Now to make your answer types... please don't make any typos or put in a nonexistent type\n";
+    cout << "Don't use the 'actual:' ones, use the 'types' ONLY, also they're case-sensitive\n";
+    cout << "actual: Noun | Plural Noun | Proper Noun | Verb | Animal | Animal, PLural\n";
+    cout << " types: noun |    nouns    | proper_noun | verb | animal | animals\n";
+    cout << "actual: Verb, past tense | Verb ending in -ing | Adverb | Adjective\n";
+    cout << " types:     verbed       |      verbing        | adverb | adjective\n\n";
+
+    ostringstream a_buffer;
+
+    for (int x = 0; x < 12; x++) {
+        cout << x + 1 << ": ";
+        getline(cin, answer_type[x]);
+        a_buffer << answer_type[x] << endl;
+    }
+
+    writeFile(filename + ".CUS", s_buffer);
+    writeFile(filename + ".ANS", a_buffer);
+
+    ostringstream master_buffer;
+    string master_list = readFile("master.list");
+
+    istringstream master_rebuilder(master_list);
+    vector<string> master_line = {""};
+    string temp_line = "";
+    int iteration = 0;
+
+    while (getline(master_rebuilder, temp_line)) {
+
+        master_line[iteration] = temp_line;
+        master_line.push_back("");
+        if (master_line[iteration] != "")
+            master_buffer << master_line[iteration] << endl;
+
+        iteration++;
+    }
+
+    master_buffer << filename << ".CUS";
+
+    writeFile("master.list", master_buffer);
+    
+    ++ID_COUNTER;
+
+    Story newCustomStory;
+    newCustomStory.setupStory(filename + ".CUS", filename + ".ANS");
+
+    return newCustomStory;
+}
+
 int main() {
+
+    titleScreen();
 
     int selection;
     string choice;
@@ -522,7 +735,7 @@ int main() {
     }
     masterlist.clear();
     masterlist.seekg(0);
-    Story listing[ID_COUNTER];
+    vector<Story> listing;
     { //WE NEED THESE BRACES FOR DEALLOCATION
         int tossme = 0;
         string lineMod;
@@ -533,6 +746,8 @@ int main() {
             lineMod = line;
             lineMod.erase(lineMod.end() - 4, lineMod.end());
             lineMod += ".ANS";
+            Story temp_story_buffer;
+            listing.push_back(temp_story_buffer);
             listing[tossme-1].setupStory(line, lineMod);
         }
     } // DONT TOUCH THIS ONE EITHER
@@ -558,7 +773,7 @@ int main() {
         cout << "you can customize with your own silly words! You can make it serious, funny,\n";
         cout << "creative or just downright dirty! The laughter is best shared with friends!\n";
         cout << endl;
-        cout << "Commands:\n<back> <next> <quit> <view> <wiki>" << endl;
+        cout << "Commands:\n<back> <next> <quit> <view> <wiki> <make>" << endl;
         cout << endl;
         cout << "Choose a story:\n";
 
@@ -577,17 +792,15 @@ int main() {
         catch (const std::invalid_argument&) {}
         catch (const std::out_of_range&) {}
 
-        if (choice == "back" and page > 1)
-            page = --page;
+        if (choice == "back" and page > 1) {page = --page;}
 
-        if (choice == "next" and page < pages)
-            page = ++page;
+        if (choice == "next" and page < pages) {page = ++page;}
 
-        if (choice == "view")
-            savedScreen();
+        if (choice == "view") {savedScreen();}
 
-        if (choice == "wiki")
-            wikiMenu(library);
+        if (choice == "wiki") {wikiMenu(library);}
+
+        if (choice == "make") {Story temp_story_buffer; listing.push_back(temp_story_buffer); listing.back() = makeScreen();}
 
         //view saved
         
@@ -600,3 +813,16 @@ int main() {
     cout << "Goodbye!\n";
     return 0;
 }
+
+/*
+ideas: 
+
+making title screen animations? using my new msleep function I made just for this.
+maybe using math to make cheap animations..? using only strings tho.
+
+making saved (only saved) content deletable (hence why they have a different extension)
+including txt files generated from playing the game.
+
+rewrite all the dumbass error messages and threatening sounding warnings so app is more professional
+
+*/
