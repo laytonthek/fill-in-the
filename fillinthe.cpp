@@ -596,7 +596,7 @@ Story makeScreen() {
     cout << "those 18 lines will be grouped into 3 paragraphs of 6 lines each." << endl;
     cout << endl;
     cout << "use the @ symbol to insert places for answers to be written in. THERE MUST BE 12 IN YOUR STORY!" << endl;
-    cout << "NO MORE, NO LESS, NO EXCEPTIONS! this is for proper formatting\nfor all the old systems I'm porting to later\n"
+    cout << "NO MORE, NO LESS, NO EXCEPTIONS! this is for proper formatting\nfor all the old systems I'm porting to later\n";
     cout << "IF YOU DONT HAVE 12 @ PROGRAM WONT CONTINUE!\n\n";
     cout << "Press ENTER to continue...";
     getline(cin, dummy);
