@@ -7,41 +7,137 @@
 #include <sstream>
 #include <cmath>
 #include <vector>
+#include <map>
+#include <filesystem>
+#include <algorithm>
+#include <random>
+#include <ctime>
 using namespace std;
 
 /*
-Version 4 of Fill in the $#&%@! is here!
+Beta 5 of Fill in the $#&%@! is here!
 
-This is a major update as it adds a beautiful title screen and gives the ability to make your own stories! 
-the user-made stories are automatically added to master.list and added to the main menu upon creation so 
-they can be immediately played without configuration!
+This is the biggest update to date! There has been a complete UI overhaul that adds colors and
+animation. a lot of display options and UI elements are now colorful and more fun to look at.
+
+We added stars, yes. STARS
+
+Also, the content system is complete for now... You can now delete any user-generated content
+from within the app, so now made stories and saved played stories are deletable without exit.
 */
 
+void cls() {std::cout << "\033[2J\033[1;1H";}
+
+string color(const string& colorName, int selector) {
+
+    static const map<pair<int, string>, string> ansiColors = {
+        {{0, "reset"}, "\033[0m"},
+        {{0, "bold"}, "\033[1m"},
+        {{3, "black"}, "\033[30m"},
+        {{3, "red"}, "\033[31m"},
+        {{3, "green"}, "\033[32m"},
+        {{3, "yellow"}, "\033[33m"},
+        {{3, "blue"}, "\033[34m"},
+        {{3, "magenta"}, "\033[35m"},
+        {{3, "cyan"}, "\033[36m"},
+        {{3, "white"}, "\033[37m"},
+        {{4, "black"}, "\033[40m"},
+        {{4, "red"}, "\033[41m"},
+        {{4, "green"}, "\033[42m"},
+        {{4, "yellow"}, "\033[43m"},
+        {{4, "blue"}, "\033[44m"},
+        {{4, "magenta"}, "\033[45m"},
+        {{4, "cyan"}, "\033[46m"},
+        {{4, "white"}, "\033[47m"},
+        {{9, "black"}, "\033[90m"},
+        {{9, "red"}, "\033[91m"},
+        {{9, "green"}, "\033[92m"},
+        {{9, "yellow"}, "\033[93m"},
+        {{9, "blue"}, "\033[94m"},
+        {{9, "magenta"}, "\033[95m"},
+        {{9, "cyan"}, "\033[96m"},
+        {{9, "white"}, "\033[97m"}
+    };
+
+    auto match = ansiColors.find({selector, colorName});
+    if (match != ansiColors.end()) {
+        return match->second;
+    }
+
+    return "";
+}
+
+void hideCursor() {cout << "\033[?25l";}
+
+//void showCursor() {cout << "\033[?25h";}
+
+void star(int x, int y) {
+
+    random_device rd; //random seed source
+    mt19937 gen(rd()); //random engine (Mersenne Twister)
+    cout << "\0337";
+
+    hideCursor();
+
+    //vector<string> star = {"*", "^", "#", "+", "|", "?"};
+
+    vector<string> star = {"*", "^", "\""};
+    vector<string> color_type = {
+
+        color("red", 3),
+        color("green", 3), 
+        color("blue", 3),
+        color("yellow", 3),
+        color("cyan", 3),
+        color("magenta", 3)
+    };
+
+    uniform_int_distribution<> dist_star(1, star.size() - 1); //number range distributions
+    uniform_int_distribution<> dist_color(1, color_type.size() - 1);
+
+    ostringstream current_star;
+    current_star << "\033[" << y << ";" << x << "H" << color_type[dist_color(gen)] << star[dist_star(gen)] << color("reset", 0);
+    //return current_star.str();
+
+    cout << "\033[" << y << ";" << x << "H" << color_type[dist_color(gen)] << star[dist_star(gen)] << "\0338";
+
+    return;
+}
+
+string getEXT(string str) {str.erase(str.begin(), str.end() - 3); return str;}
+
+int visibleLength(const string& text) {
+    int length = 0;
+    for (size_t i = 0; i < text.size(); ++i) {
+        if (text[i] == '\033') {
+            ++i;
+            if (i < text.size() && text[i] == '[') {
+                ++i;
+                while (i < text.size() && text[i] != 'm') {
+                    ++i;
+                }
+            }
+            continue;
+        }
+        ++length;
+    }
+    return length;
+}
+
 unsigned int ID_COUNTER;
-string VER = "Beta v4";
-string TITLE = "Fill in the $#&%@!";
-string LONGTITLE = "" + TITLE + " (" + VER + ")";
-string COPYRIGHT = "Developed by Layton Kinyon. August 2026";
+static const string TITLE = color("cyan", 3) + "Fill in the $#&%@!" + color("reset", 0); string VER = color("red", 3) + "Beta v5" + color("reset", 0);
+//string TITLE = "Fill in the $#&%@!"; string VER = "Beta v4";
+static const string LONGTITLE = "" + TITLE + " (" + VER + ")";
+static const string COPYRIGHT = color("green", 3) + "Developed by Layton Kinyon. August 2026" + color("reset", 0);
 string HEADING_BUFFER;
 
-void cls() {
-    std::cout << "\033[2J\033[1;1H"; // Clear screen and move cursor to top-left
-}
+void sleep(unsigned int seconds) {cout << "\n"; std::this_thread::sleep_for(std::chrono::seconds(seconds));}
 
-void sleep(unsigned int seconds) {
-    std::this_thread::sleep_for(std::chrono::seconds(seconds)); // Makes console wait for x seconds
-}
-
-void msleep(unsigned int milliseconds) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));
-}
+void msleep(unsigned int milliseconds) {cout << "\n"; std::this_thread::sleep_for(std::chrono::milliseconds(milliseconds));}
 
 void nlclr() {std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');}
 
-void pause() {
-    nlclr(); //clrs buffer of newlines
-    cin.get(); //wait for new line
-}
+void pause() {nlclr(); cin.get();}
 
 string readFile(string filename) {
 
@@ -50,7 +146,7 @@ string readFile(string filename) {
 
     if (!handle.is_open()) {
 
-        return "error - can't read file.\n";
+        return "error";
 
     } else {
 
@@ -70,7 +166,7 @@ bool writeFile(string filename, ostringstream& buffer) {
 
         if (!handle.is_open()) {
 
-            cout << "\n saving failed...";
+            cout << color("red", 3) << "\n saving failed..." << color("reset", 0);
             pause();
             return false;
 
@@ -82,9 +178,71 @@ bool writeFile(string filename, ostringstream& buffer) {
         }
 }
 
+void deleteFile(string filename) {
+
+}
+
+void saveToList(string new_listing, int list) {
+
+    ostringstream master_buffer;
+    string master_list;
+
+    if (list == 0) {master_list = readFile("master.list");}
+    else if (list == 1) {master_list = readFile("saved.list");}
+
+    istringstream master_rebuilder(master_list);
+    vector<string> master_line = {""};
+    string temp_line = "";
+    int iteration = 0;
+
+    while (getline(master_rebuilder, temp_line)) {
+
+        master_line[iteration] = temp_line;
+        master_line.push_back("");
+        if (master_line[iteration] != "") {master_buffer << master_line[iteration] << endl;}
+
+        iteration++;
+    }
+
+    master_buffer << new_listing;
+
+    if (list == 0) {writeFile("master.list", master_buffer);}
+    else if (list == 1) {writeFile("saved.list", master_buffer);}
+}
+
+void deleteFromList(string new_deleted_listing, int list) {
+
+    ostringstream master_buffer;
+
+    string master_list;
+
+    if (list == 0) {master_list = readFile("master.list");}
+    else if (list == 1) {master_list = readFile("saved.list");}
+
+    istringstream master_rebuilder(master_list);
+    vector<string> master_line = {""};
+    string temp_line = "";
+    int iteration = 0;
+
+    while (getline(master_rebuilder, temp_line)) {
+
+        //master_line[iteration] = temp_line;
+        master_line.push_back(temp_line);
+        if (master_line[iteration] != "") {
+            if (master_line[iteration] == new_deleted_listing) {master_buffer << "";}
+            else {master_buffer << master_line[iteration] << endl;}
+        }
+        iteration++;
+    }
+
+    if (list == 0) {writeFile("master.list", master_buffer);}
+    else if (list == 1) {writeFile("saved.list", master_buffer);}
+}
+
 bool replaceFirst(std::string& str, const std::string& from, const std::string& to) {
 
     size_t pos = str.find(from);
+
     if (pos != std::string::npos) {
 
         str.replace(pos, from.length(), to);
@@ -113,6 +271,8 @@ class Story {
 
     unsigned int id;
     string heading;
+    string file;
+    bool is_custom = false;
 
     class Line {
 
@@ -140,6 +300,14 @@ class Story {
 
     void setupStory(string filename, string answers) {
 
+        string extension;
+        file = filename;
+        extension = getEXT(file);
+
+        if (extension == "SRY") {is_custom = false;}
+        else if (extension == "CUS") {is_custom = true;}
+        else {cls(); cout << color("red", 3) << "story must end in .CUS or .SRY, case sensitive" << color("reset", 0); exit(1);}
+
         string storydata = readFile(filename);
         heading = HEADING_BUFFER;
 
@@ -149,18 +317,15 @@ class Story {
         getline(stream, temp);
         getline(stream, temp);
 
-        for (int x = 0; x < 6; x++)
-            getline(stream, hookline[x].data);
+        for (int x = 0; x < 6; x++) {getline(stream, hookline[x].data);}
 
         getline(stream, temp);
 
-        for (int x = 0; x < 6; x++)
-            getline(stream, problemline[x].data);
+        for (int x = 0; x < 6; x++) {getline(stream, problemline[x].data);}
 
         getline(stream, temp);
 
-        for (int x = 0; x < 6; x++)
-            getline(stream, chaosline[x].data);
+        for (int x = 0; x < 6; x++) {getline(stream, chaosline[x].data);}
 
         for (int x = 0; x < 18; x++) {
 
@@ -190,28 +355,17 @@ class Story {
 
             getline(answerstream, answer[x].type);
 
-            if (answer[x].type == "proper_noun")
-                answer[x].label = "Proper Noun";
-            if (answer[x].type == "noun")
-                answer[x].label = "Noun";
-            if (answer[x].type == "nouns")
-                answer[x].label = "Plural Noun";
-            if (answer[x].type == "animal")
-                answer[x].label = "Animal";
-            if (answer[x].type == "animals")
-                answer[x].label = "Animal, Plural";
-            if (answer[x].type == "body_part")
-                answer[x].label = "Body Part";
-            if (answer[x].type == "verb")
-                answer[x].label = "Verb";
-            if (answer[x].type == "verbed")
-                answer[x].label = "Verb, past tense";
-            if (answer[x].type == "verbing")
-                answer[x].label = "Verb ending in -ing";
-            if (answer[x].type == "adverb")
-                answer[x].label = "Adverb";
-            if (answer[x].type == "adjective")
-                answer[x].label = "Adjective";
+            if (answer[x].type == "proper_noun") {answer[x].label = "Proper Noun";}
+            if (answer[x].type == "noun") {answer[x].label = "Noun";}
+            if (answer[x].type == "nouns") {answer[x].label = "Plural Noun";}
+            if (answer[x].type == "animal") {answer[x].label = "Animal";}
+            if (answer[x].type == "animals") {answer[x].label = "Animal, Plural";}
+            if (answer[x].type == "body_part") {answer[x].label = "Body Part";}
+            if (answer[x].type == "verb") {answer[x].label = "Verb";}
+            if (answer[x].type == "verbed") {answer[x].label = "Verb, past tense";}
+            if (answer[x].type == "verbing") {answer[x].label = "Verb ending in -ing";}
+            if (answer[x].type == "adverb") {answer[x].label = "Adverb";}
+            if (answer[x].type == "adjective") {answer[x].label = "Adjective";}
         }
     }   
 };
@@ -243,8 +397,7 @@ class Wiki {
             wiki_data = readFile(filename);
 
             istringstream wiki_buffer(wiki_data);
-            for (int x = 0; x < 20; x++)
-                getline(wiki_buffer, line[x].data);
+            for (int x = 0; x < 20; x++) {getline(wiki_buffer, line[x].data);}
 
             if (type == "noun") {proper_name = "Noun"; id = 1;}
             if (type == "nouns") {proper_name = "Plural Noun"; id = 2;}
@@ -273,49 +426,49 @@ class Wiki {
     WikiItem buffer;
 };
 
+class Save {
+
+    public:
+
+    string file;
+
+    string setupSave(string filename) {
+
+        file = filename;
+        return readFile(file);
+    }
+};
+
 void bufferWiki(Wiki::WikiItem& current_item, string type) {
 
-    if (type == "noun")
-        current_item.setupWikiItem("noun");
-    if (type == "nouns")
-        current_item.setupWikiItem("nouns");
-    if (type == "proper_noun")
-        current_item.setupWikiItem("proper_noun");
-    if (type == "verb")
-        current_item.setupWikiItem("verb");
-    if (type == "verbed")
-        current_item.setupWikiItem("verbed");
-    if (type == "verbing")
-        current_item.setupWikiItem("verbing");
-    if (type == "adverb")
-        current_item.setupWikiItem("adverb");
-    if (type == "adjective")
-        current_item.setupWikiItem("adjective"); 
-    if (type == "animal")
-        current_item.setupWikiItem("animal");
-    if (type == "animals")
-        current_item.setupWikiItem("animals");
+    if (type == "noun") {current_item.setupWikiItem("noun");}
+    if (type == "nouns") {current_item.setupWikiItem("nouns");}
+    if (type == "proper_noun") {current_item.setupWikiItem("proper_noun");}
+    if (type == "verb") {current_item.setupWikiItem("verb");}
+    if (type == "verbed") {current_item.setupWikiItem("verbed");}
+    if (type == "verbing") {current_item.setupWikiItem("verbing");}
+    if (type == "adverb") {current_item.setupWikiItem("adverb");}
+    if (type == "adjective") {current_item.setupWikiItem("adjective");}
+    if (type == "animal") {current_item.setupWikiItem("animal");}
+    if (type == "animals") {current_item.setupWikiItem("animals");}
 }
 
-void storyScreen(Story& display) {
+void storyScreen(Story& display, vector<Save>& current_save) {
 
     cls();
-    cout << display.heading << "\n\n";
-    for (int x = 0; x < 6; x++)
-        cout << display.hookline[x].data << endl;
+    cout << color("blue", 3) << display.heading << color("reset", 0) << "\n\n";
+    for (int x = 0; x < 6; x++) {cout << display.hookline[x].data << endl;}
     cout << endl;
-    for (int x = 0; x < 6; x++)
-        cout << display.problemline[x].data << endl;
+    for (int x = 0; x < 6; x++) {cout << display.problemline[x].data << endl;}
     cout << endl;
-    for (int x = 0; x < 6; x++)
-        cout << display.chaosline[x].data << endl;
+    for (int x = 0; x < 6; x++) {cout << display.chaosline[x].data << endl;}
     msleep(1777);
 
     string prompt;
 
     do {
 
-        cout << "\nWould you like to save? 'yes' or 'no': ";
+        cout << "\nWould you like to " << color("green", 3) << "save" << color("reset", 0) << "? 'yes' or 'no': ";
         cin >> prompt;
 
     } while (prompt != "yes" and prompt != "no");
@@ -330,29 +483,28 @@ void storyScreen(Story& display) {
         bool flag;
 
         cin >> maketxt;
+        Save new_save;
+        new_save.file = maketxt;
+        current_save.push_back(new_save);
+
 
         txtbuffer << display.heading << " - " << maketxt << endl << endl;
 
-        for (int x = 0; x < 6; x++) 
-            txtbuffer << display.hookline[x].data << endl;
+        for (int x = 0; x < 6; x++) {txtbuffer << display.hookline[x].data << endl;}
 
         txtbuffer << endl;
 
-        for (int x = 0; x < 6; x++)
-            txtbuffer << display.problemline[x].data << endl;
+        for (int x = 0; x < 6; x++) {txtbuffer << display.problemline[x].data << endl;}
 
         txtbuffer << endl;
 
-        for (int x = 0; x < 6; x++)
-            txtbuffer << display.chaosline[x].data << endl;
+        for (int x = 0; x < 6; x++) {txtbuffer << display.chaosline[x].data << endl;}
 
         flag = writeFile(maketxt, txtbuffer);
 
-        if (!flag) {
+        if (!flag) {cout << color("red", 3) << "\n   error saving file..." << color("reset", 0); pause();}
 
-            cout << "\n   error saving file...";
-            pause();
-        }
+        saveToList(maketxt, 1);
     }
 
     return;
@@ -364,18 +516,17 @@ void wikiScreen(Wiki::WikiItem& current_item) {
 
     cls();
 
-    cout << "<WIKI> " << current_item.proper_name << endl;
+    cout << color("magenta", 3) << "<WIKI> " << color("cyan", 3) << current_item.proper_name << color("reset", 0) << endl;
     cout << endl;
-    for (int x = 0; x < 20; x++)
-        cout << current_item.line[x].data << endl;
+    for (int x = 0; x < 20; x++) {cout << current_item.line[x].data << endl;}
     cout << endl;
-    cout << "Press ENTER to continue...";
+    cout << "Press " << color("yellow", 3) << "ENTER" << color("reset", 0) << " to continue...";
     
     getline(cin, dummy);
     return;
 }
 
-void answerScreen(Story& on_display, Wiki& current_library) {
+void playStory(Story& on_display, Wiki& current_library, vector<Save>& current_save) {
 
     string current_prompt;
 
@@ -387,16 +538,12 @@ void answerScreen(Story& on_display, Wiki& current_library) {
 
         cls();
         cout << on_display.heading << "\n";
-        cout << "type 'WIKI' in all caps for an explanation";
+        cout << "type '" << color("magenta", 3) << "WIKI" << color("reset", 0) << "' in all caps for an explanation";
 
-        cout << endl << on_display.answer[x].label << ": ";
+        cout << endl << color("cyan", 3) << on_display.answer[x].label << color("reset", 0) << ": ";
         getline(cin, current_prompt);
         msleep(111);
-        if (current_prompt != "WIKI") {
-            
-            on_display.answer[x].data = current_prompt; //need to fix bug where input is only one word, need to be able to have whitespace
-
-        } else {
+        if (current_prompt != "WIKI") {on_display.answer[x].data = current_prompt;} else {
 
             wikiScreen(current_library.buffer);
             x--;
@@ -412,32 +559,17 @@ void answerScreen(Story& on_display, Wiki& current_library) {
         while (replaceFirst(on_display.problemline[x].data, "@", on_display.answer[current].data) and current < 12) {current++;}
 
     for (int x = 0; x < 6; x++)
-        while (replaceFirst(on_display.chaosline[x].data, "@", on_display.answer[current].data) and current <12) {current++;}
+        while (replaceFirst(on_display.chaosline[x].data, "@", on_display.answer[current].data) and current < 12) {current++;}
 
-    storyScreen(on_display);
+    storyScreen(on_display, current_save);
 
-    for (int x = 0; x < 12; x++)
-        on_display.answer[x].data.clear();
+    for (int x = 0; x < 12; x++) {on_display.answer[x].data.clear();}
 
     for (int x = 0; x < 18; x++) {
 
-        for (int y = 0; y < 6; y++) {
-
-            on_display.hookline[y].data = on_display.backupline[x].data;
-            x++;
-        }
-
-        for (int y = 0; y < 6; y++) {
-
-            on_display.problemline[y].data = on_display.backupline[x].data;
-            x++;
-        }
-
-        for (int y = 0; y < 6; y++) {
-
-            on_display.chaosline[y].data = on_display.backupline[x].data;
-            x++;
-        }
+        for (int y = 0; y < 6; y++) {on_display.hookline[y].data = on_display.backupline[x].data; x++;}
+        for (int y = 0; y < 6; y++) {on_display.problemline[y].data = on_display.backupline[x].data; x++;}
+        for (int y = 0; y < 6; y++) {on_display.chaosline[y].data = on_display.backupline[x].data; x++;}
     }
 }
 
@@ -448,7 +580,7 @@ void savedScreen() {
     string current_line;
 
     cls();
-    cout << "Type in desired filename to view: ";
+    cout << "Type in desired " << color("green", 3) << "filename " << color("reset", 0) << "to " << color("green", 3) << "view" << color("reset", 0) << ": ";
     cin >> current_prompt;
 
     prompt_file = readFile(current_prompt);
@@ -456,10 +588,9 @@ void savedScreen() {
 
     cls();
 
-    while (getline(current_buffer, current_line))
-        cout << current_line << endl;
+    while (getline(current_buffer, current_line)) {cout << current_line << endl;}
 
-    cout << "\nPress Enter to continue...";
+    cout << "\nPress " << color("yellow", 3) << "Enter " << color("reset", 0) << "to continue...";
 
     pause();
     
@@ -473,37 +604,30 @@ void wikiMenu(Wiki& current_library) {
         current_prompt.clear();
 
         cls();
-        cout << "Welcome to the built-in wiki, which helps you play the game better!" << endl;
+        cout << "Welcome to the built-in " << color("magenta", 3) << "wiki" << color("reset", 0) << ", which helps you play the game better!" << endl;
         cout << endl;
-        cout << "(1) " << current_library.noun.proper_name << endl;
-        cout << "(2) " << current_library.nouns.proper_name << endl;
-        cout << "(3) " << current_library.proper_noun.proper_name << endl;
-        cout << "(4) " << current_library.verb.proper_name << endl;
-        cout << "(5) " << current_library.verbed.proper_name << endl;
-        cout << "(6) " << current_library.verbing.proper_name << endl;
-        cout << "(7) " << current_library.adverb.proper_name << endl;
-        cout << "(8) " << current_library.adjective.proper_name << endl;
+        cout << "(1) " << color("magenta", 3) << current_library.noun.proper_name << color("reset", 0) << endl;
+        cout << "(2) " << color("magenta", 3) << current_library.nouns.proper_name << color("reset", 0) << endl;
+        cout << "(3) " << color("magenta", 3) << current_library.proper_noun.proper_name << color("reset", 0) << endl;
+        cout << "(4) " << color("magenta", 3) << current_library.verb.proper_name << color("reset", 0) << endl;
+        cout << "(5) " << color("magenta", 3) << current_library.verbed.proper_name << color("reset", 0) << endl;
+        cout << "(6) " << color("magenta", 3) << current_library.verbing.proper_name << color("reset", 0) << endl;
+        cout << "(7) " << color("magenta", 3) << current_library.adverb.proper_name << color("reset", 0) << endl;
+        cout << "(8) " << color("magenta", 3) << current_library.adjective.proper_name << color("reset", 0) << endl;
         cout << endl;
-        cout << "Select an option by number or type 'menu' to return to main menu. ";
+        cout << "Select an option by number or type " << color("yellow", 3) << "menu" << color("reset", 0) << " to return to main menu: " << color("yellow", 3);
         cin >> current_prompt;
+        cout << color("reset", 0);
         cin.ignore();
 
-        if (current_prompt == "1")
-            wikiScreen(current_library.noun);
-        if (current_prompt == "2")
-            wikiScreen(current_library.nouns);
-        if (current_prompt == "3")
-            wikiScreen(current_library.proper_noun);
-        if (current_prompt == "4")
-            wikiScreen(current_library.verb);
-        if (current_prompt == "5")
-            wikiScreen(current_library.verbed);
-        if (current_prompt == "6")
-            wikiScreen(current_library.verbing);
-        if (current_prompt == "7")
-            wikiScreen(current_library.adverb);
-        if (current_prompt == "8")
-            wikiScreen(current_library.adjective);
+        if (current_prompt == "1") {wikiScreen(current_library.noun);}
+        if (current_prompt == "2") {wikiScreen(current_library.nouns);}
+        if (current_prompt == "3") {wikiScreen(current_library.proper_noun);}
+        if (current_prompt == "4") {wikiScreen(current_library.verb);}
+        if (current_prompt == "5") {wikiScreen(current_library.verbed);}
+        if (current_prompt == "6") {wikiScreen(current_library.verbing);}
+        if (current_prompt == "7") {wikiScreen(current_library.adverb);}
+        if (current_prompt == "8") {wikiScreen(current_library.adjective);}
 
     } while (current_prompt != "menu");
 
@@ -512,59 +636,124 @@ void wikiMenu(Wiki& current_library) {
 
 void titleScreen() {
 
-    cls();
+    random_device rd;
+    mt19937 gen(rd());
 
-    int title_length = LONGTITLE.length();
-    int copyright_length = COPYRIGHT.length();
+    uniform_int_distribution<> width(1, 80);
+    uniform_int_distribution<> height(1, 25);
 
-    cout << "\n\n\n\n\n\n\n\n\n\n";
+    vector<int> widths;
+    vector<int> heights;
 
-    int t_start_pos = 40 - (title_length / 2);
-    int c_start_pos = 40 - (copyright_length / 2);
+    for (int x = 0; x < 15; x++) {
 
-    int box_length = copyright_length + 4;
-    int b_start_pos = 40 - (box_length / 2);
+        widths.push_back(width(gen));
+        heights.push_back(height(gen));
+        while (((widths[x] >= 20) && (widths[x] <= 62)) && ((heights[x] >= 11) && (heights[x] <= 14))) {
+            
+            widths[x] = width(gen);
+            heights[x] = height(gen);
+        }
+    }
 
-    for (int x = 0; x < b_start_pos; x++)
-        cout << " ";
+    auto endTime = std::chrono::steady_clock::now() + std::chrono::seconds(3);
+
+    while (std::chrono::steady_clock::now() < endTime) {
+        cls();
+        cout << "\0337";
+
+        hideCursor();
+        cls();
+
+        int title_length = visibleLength(LONGTITLE);
+        int copyright_length = visibleLength(COPYRIGHT);
+
+        cout << "\n\n\n\n\n\n\n\n\n\n";
+
+        int t_start_pos = 40 - (title_length / 2);
+        int c_start_pos = 40 - (copyright_length / 2);
+
+        int box_length = copyright_length + 4;
+        int b_start_pos = 40 - (box_length / 2);
+
+        for (int x = 0; x < b_start_pos; x++) {cout << " ";}
+            
+        cout << color("magenta", 3);
+
+        vector<string> color_selector = {color("magenta", 3), color("cyan", 3)};
+        int frame;
+
+        for (int x = 0; x < box_length; x++) {cout << color_selector[(x + (frame % 2)) % color_selector.size()] << "=";}
+
+        frame++;
+
+        cout << endl;
+
+        for (int x = 0; x < c_start_pos - 2; x++) {cout << " ";}
+
+        cout << "| ";
+
+        for (int x = c_start_pos - 2; x < t_start_pos - 2; x++) {cout << " ";}
+            
+        cout << LONGTITLE;
+
+        for (int x = t_start_pos + title_length; x < c_start_pos + copyright_length; x++) {cout << " ";}
+
+        cout << color("magenta", 3);
+        cout << " |" << endl;
+            
+        for (int x = 0; x < c_start_pos - 2; x++) {cout << " ";}
+
+        cout << color("magenta", 3) << "| " << COPYRIGHT << color("magenta", 3) << " |" << endl;
+
+        for (int x = 0; x < b_start_pos; x++) {cout << " ";}
+            
+        for (int x = 0; x < box_length; x++) {cout << color_selector[(x + (frame % 2)) % color_selector.size()] << "=";}
+
+        cout << endl;
+        cout << endl << color("reset", 0);
+
+        //showCursor();
+        for (int x = 0; x < 15; x++)
+            star(widths[x], heights[x]);
         
-    for (int x = 0; x < box_length; x++)
-        cout << "=";
+        //cout << "\033[10;0H----5----1----5----2----5----3----5----4----5---=5=---5----612345----7----5----8";
 
-    cout << endl;
+        msleep(160);
+            //x20-62    y11-14
+    }
 
-    for (int x = 0; x < c_start_pos - 2; x++)
-        cout << " ";
-
-    cout << "| ";
-
-    for (int x = c_start_pos - 2; x < t_start_pos - 2; x++)
-        cout << " ";
-        
-    cout << LONGTITLE;
-
-    for (int x = t_start_pos + title_length; x < c_start_pos + copyright_length; x++)
-        cout << " ";
-
-    cout << " |" << endl;
-        
-    for (int x = 0; x < c_start_pos - 2; x++)
-        cout << " ";
-
-    cout << "| " << COPYRIGHT << " |" << endl;
-
-    for (int x = 0; x < b_start_pos; x++)
-        cout << " ";
-        
-    for (int x = 0; x < box_length; x++)
-        cout << "=";
-
-    cout << endl;
-    cout << endl;
-
-    sleep(4);
 
     return;
+}
+
+void starScreen() {
+
+    random_device rd;
+    mt19937 gen(rd());
+
+    uniform_int_distribution<> width(1, 80);
+    uniform_int_distribution<> height(1, 25);
+
+    auto endTime = std::chrono::steady_clock::now() + std::chrono::milliseconds(1600);
+
+    vector<int> widths;
+    vector<int> heights;
+    int stars = 15;
+
+    for (int x = 0; x < stars; x++) {
+        widths.push_back(width(gen));
+        heights.push_back(height(gen));
+    }
+
+    while (std::chrono::steady_clock::now() < endTime) { 
+
+        cls();
+        for (int x = 0; x < stars; x++) {
+            star(widths[x], heights[x]);
+        }
+        msleep(160);
+    }
 }
 
 Story makeScreen() {
@@ -584,32 +773,36 @@ Story makeScreen() {
 
     cls();
 
-    cout << "Come up with a title for your story. Keep in mind this title shows up both\nat the top of your story and in the main menu.\n\nTitle: ";
+    cout << "Come up with a " << color("blue", 3) << "title " << color("reset", 0) << "for your story. Keep in mind this title shows up both\nat the top of your story and in the main menu.\n\n" << color("blue", 3) << "Title: ";
     cin.ignore();
     getline(cin, title);
+    cout << color("reset", 0);
 
     cls();
 
+    cout << color("red", 3);
     cout << "READ ME IF YOURE NEW TO MAKING STORIES!" << endl;
     cout << endl;
-    cout << "your story MUST be 18 lines, press ENTER at the end of each line to ensure proper formatting." << endl;
+    cout << "your " << color("blue", 3) << "story " << color("red", 3) << "MUST be 18 lines, press ENTER at the end of each line to ensure proper formatting." << endl;
     cout << "those 18 lines will be grouped into 3 paragraphs of 6 lines each." << endl;
     cout << endl;
-    cout << "use the @ symbol to insert places for answers to be written in. THERE MUST BE 12 IN YOUR STORY!" << endl;
+    cout << "use the " << color("green", 3) << "@ " << color("red", 3) << "symbol to insert places for answers to be written in. THERE MUST BE 12 IN YOUR STORY!" << endl;
     cout << "NO MORE, NO LESS, NO EXCEPTIONS! this is for proper formatting\nfor all the old systems I'm porting to later\n";
     cout << "IF YOU DONT HAVE 12 @ PROGRAM WONT CONTINUE!\n\n";
-    cout << "Press ENTER to continue...";
+    cout << color("reset", 0);
+    cout << "Press " << color("yellow", 3) << "ENTER " << color("yellow", 3) << "to continue...";
     getline(cin, dummy);
 
     ostringstream s_buffer;
 
     cls();
-    cout << title << endl;
+    cout << color("blue", 3);
+    cout << title << color("reset", 0) << endl;
     s_buffer << title << endl << endl;
     cout << endl;
     for (int x = 0; x < 6; x++) {  
 
-        cout << x + 1 << ">";
+        cout << x + 1 << color("blue", 3) << "> " << color("reset", 0);
         getline(cin, line[x]);
         s_buffer << line[x] << endl;
     }
@@ -617,7 +810,7 @@ Story makeScreen() {
     s_buffer << endl;
     for (int x = 6; x < 12; x++) {
 
-        cout << x + 1 << ">";
+        cout << x + 1 << color("blue", 3) << "> " << color("reset", 0);
         getline(cin, line[x]);
         s_buffer << line[x] << endl;
     }
@@ -625,68 +818,51 @@ Story makeScreen() {
     s_buffer << endl;
     for (int x = 12; x < 18; x++) {
 
-        cout << x + 1 << ">";
+        cout << x + 1 << color("blue", 3) << "> " << color("reset", 0);
         getline(cin, line[x]);
         s_buffer << line[x] << endl;
     }
 
-    for (int x = 0; x < 18; x++) {
-
-        at_checker = at_checker + countString(line[x], "@");
-    }
+    for (int x = 0; x < 18; x++) {at_checker = at_checker + countString(line[x], "@");}
 
     if (at_checker != 12) {
         cls();
+        cout << color("red", 4) << color("black", 3);
         cout << "you really need to read the instructions, or count your @'s!\nThere's content guidelines, you know...";
-        sleep(5);
         cout << "";
         cout << "";
         cout << "";
         cout << "";
         cout << "this should teach you.";
+        cout << color("reset", 0);
         exit(1);
     }
     
     cls();
-    cout << "Now to make your answer types... please don't make any typos or put in a nonexistent type\n";
-    cout << "Don't use the 'actual:' ones, use the 'types' ONLY, also they're case-sensitive\n";
+    cout << "Now to make your " << color("green", 3) << "answer " << color("reset", 0) << "types... please don't make any typos or put in a nonexistent type\n";
+    cout << "Don't use the 'actual:' ones, use the '" << color("green", 3) << "types" << color("reset", 0) << "' ONLY, also they're case-sensitive\n";
     cout << "actual: Noun | Plural Noun | Proper Noun | Verb | Animal | Animal, PLural\n";
-    cout << " types: noun |    nouns    | proper_noun | verb | animal | animals\n";
+    cout << color("green", 3);
+    cout << " types: noun |    nouns    | proper_noun | verb | animal | animals\n" << color("reset", 0);
     cout << "actual: Verb, past tense | Verb ending in -ing | Adverb | Adjective\n";
+    cout << color("green", 3);
     cout << " types:     verbed       |      verbing        | adverb | adjective\n\n";
+    cout << color("reset", 0);
 
     ostringstream a_buffer;
 
     for (int x = 0; x < 12; x++) {
-        cout << x + 1 << ": ";
+        cout << color("reset", 0);
+        cout << x + 1 << color("green", 3) << "> ";
         getline(cin, answer_type[x]);
         a_buffer << answer_type[x] << endl;
     }
+    cout << color("reset", 0);
 
     writeFile(filename + ".CUS", s_buffer);
     writeFile(filename + ".ANS", a_buffer);
 
-    ostringstream master_buffer;
-    string master_list = readFile("master.list");
-
-    istringstream master_rebuilder(master_list);
-    vector<string> master_line = {""};
-    string temp_line = "";
-    int iteration = 0;
-
-    while (getline(master_rebuilder, temp_line)) {
-
-        master_line[iteration] = temp_line;
-        master_line.push_back("");
-        if (master_line[iteration] != "")
-            master_buffer << master_line[iteration] << endl;
-
-        iteration++;
-    }
-
-    master_buffer << filename << ".CUS";
-
-    writeFile("master.list", master_buffer);
+    saveToList(filename + ".CUS", 0);
     
     ++ID_COUNTER;
 
@@ -696,15 +872,163 @@ Story makeScreen() {
     return newCustomStory;
 }
 
+void deleteSavedScreen(vector<Save>& on_display) {
+
+    string current_prompt;
+    int deleter;
+
+    static int page = 1;
+    static int pages;
+    if (on_display.size() > 0) {pages = (on_display.size() + 10 - 1) / 10;}
+    else {pages = 1;}
+
+    static int page_marker;
+
+    do {
+        deleter = 0;
+        cls();
+        cout << color("red", 3) << "Warning: you are about to delete your fond memories." << color("reset", 0) << endl;
+        cout << color("yellow", 3) << "<back> <next> " << color("green", 3) << "<menu>" << color("reset", 0) << endl << endl;
+
+        page_marker = (page - 1) * 10 + 1;
+
+        for (int x = page_marker; (x <= page_marker + 9) && (x <= on_display.size()); x++)
+            cout << x << "> " << color("green", 3) <<  on_display[x - 1].file << ">" << color("reset", 0) << endl;
+
+        cout << "\nPage " << color("yellow", 3) << page << color("reset", 0) << " of " << color("yellow", 3) << pages << color("reset", 0);
+        cout << "\ncommand: " << color("red", 3);
+        cin >> current_prompt;
+        cout << color("reset", 0);
+
+        if (current_prompt == "back") {--page;}
+        else if (current_prompt == "next") {++page;}
+        if (page < 1) {page = 1;}
+        if (page > pages) {page = pages;}
+
+        try {deleter = stoi(current_prompt);}
+        catch (const std::invalid_argument&) {}
+        catch (const std::out_of_range&) {}
+
+    if ((deleter > 0) && (deleter <= static_cast<int>(on_display.size()))) {
+
+        filesystem::remove(on_display[deleter - 1].file);
+        deleteFromList(on_display[deleter - 1].file, 1);
+        vector<Save>* p_on_display = &on_display;
+        size_t index = deleter - 1;
+        p_on_display->erase(p_on_display->begin() + index);
+        break;
+    }
+
+    } while (current_prompt != "menu");
+
+    return;
+}
+
+void deleteStoryScreen(vector<Story>& on_display) {
+    
+    string current_prompt;
+    int deleter;
+    static int page = 1;
+    static int pages;
+    if (on_display.size() > 0) {pages = (on_display.size() + 10 - 1) / 10;}
+    else {pages = 1;}
+    
+    static int page_marker;
+
+    do {
+        deleter = 0;
+        cls();
+        cout << color("red", 3) << "Warning: you are about to delete your hard work." << color("reset", 0) << endl;
+        cout << color("yellow", 3) << "<back> <next> " << color("green", 3) << "<menu>" << color("reset", 0) << endl << endl;
+        page_marker = (page - 1) * 10 + 1;
+
+        for (int x = page_marker; (x <= page_marker + 9) && (x <= on_display.size()); x++) 
+            cout << x << "> " << color("blue", 3) << on_display[x - 1].heading << " <" << on_display[x - 1].file << ">" << color("reset", 0) << endl;
+
+        cout << "\nPage " << color("yellow", 3) << page << color("reset", 0) << " of " << color("yellow", 3) << pages << color("reset", 0);
+        cout << "\ncommand: " << color("red", 3);
+        cin >> current_prompt;
+
+        if (current_prompt == "back") {--page;}
+        else if (current_prompt == "next") {++page;}
+        if (page < 1) {page = 1;}
+        if (page > pages) {page = pages;}
+
+        cout << color("reset", 0);
+        try {deleter = stoi(current_prompt);}
+        catch (const std::invalid_argument&) {}
+        catch (const std::out_of_range&) {}
+
+    if ((deleter > 0) && (deleter <= static_cast<int>(on_display.size()))) {
+
+        if (!on_display[deleter - 1].is_custom) {
+
+            cls();
+            cout << color("red", 3) << "Can't delete built-in story." << color("reset", 0) << "\n\n";
+            cout << "" ;
+            sleep(3);
+
+        } else {
+            deleteFromList(on_display[deleter - 1].file, 0);
+            filesystem::remove(on_display[deleter - 1].file);
+            string ans = on_display[deleter - 1].file;
+            ans.erase(ans.end() - 3, ans.end());
+            ans += "ANS";
+            filesystem::remove(ans);
+            vector<Story>* p_on_display = &on_display;
+            size_t index = deleter - 1;
+            p_on_display->erase(p_on_display->begin() + index);
+            break;
+        }
+    }
+
+    } while (current_prompt != "menu");
+
+    return;
+}
+
+void deleteScreen(vector<Story>& listing, vector<Save>& saved) {
+
+    string current_prompt;
+    do {
+        cls();
+        cout << "Do you want to..." << endl;
+        cout << endl;
+        cout << "1) Delete a " << color("green", 3) << "saved memory" << color("reset", 0) << "?" << endl;
+        cout << "9) Delete a " << color("blue", 3) << "custom story" << color("reset", 0) << "?" << endl;
+        cout << endl;
+        cout << "Type a number or type " << color("yellow", 3) << "menu" << color("reset", 0) << " to return to main menu: ";
+        cout << color("green", 3);
+        cin >> current_prompt;
+        cout << color("reset", 0);
+
+        if (current_prompt == "1") {deleteSavedScreen(saved);}
+        else if (current_prompt == "9") {deleteStoryScreen(listing);}
+    } while (current_prompt != "menu"); return;
+}
+
 int main() {
 
     titleScreen();
+
+    random_device rd;
+    mt19937 gen(rd());
 
     int selection;
     string choice;
     int page;
     int pages;
     int pagemarker;
+    
+    vector<string> c = {
+        color("red", 3),
+        color("green", 3),
+        color("blue", 3),
+        color("magenta", 3),
+        color("yellow", 3),
+        color("cyan", 3)
+    };
+    uniform_int_distribution<> cr(1, c.size() - 1);
 
     Wiki library;
 
@@ -722,41 +1046,61 @@ int main() {
     ifstream masterlist("master.list");
     if (!masterlist.is_open()) {
         cls();
-        cout << "uh oh. " << LONGTITLE << " closed because master.list is missing." << endl;
+        cout << color("red", 3);
+        cout << "uh oh. " << LONGTITLE << color("red", 3) << " closed because master.list is missing." << endl;
         cout << "check that the PATH that the game is running at is the same as master.list" << endl;
         cout << "(if launching from terminal, cd to game folder)" << endl;
+        cout << color("reset", 0);
         exit(1);
     }
     string line;
-    while (getline(masterlist, line)) {
-        if (line == "") 
-            break;
-        ++ID_COUNTER;
-    }
+    while (getline(masterlist, line)) {if (line != "") {++ID_COUNTER;}}
     masterlist.clear();
     masterlist.seekg(0);
     vector<Story> listing;
+
     { //WE NEED THESE BRACES FOR DEALLOCATION
         int tossme = 0;
         string lineMod;
         while (getline(masterlist, line)) {
-            ++tossme;
-            if (line == "")              
-                break;
-            lineMod = line;
-            lineMod.erase(lineMod.end() - 4, lineMod.end());
-            lineMod += ".ANS";
-            Story temp_story_buffer;
-            listing.push_back(temp_story_buffer);
-            listing[tossme-1].setupStory(line, lineMod);
+            if (line != "") {
+                ++tossme;
+                lineMod = line;
+                lineMod.erase(lineMod.end() - 4, lineMod.end());
+                lineMod += ".ANS";
+                
+                if (readFile(line) != "error") {
+                    Story temp_story_buffer;
+                    listing.push_back(temp_story_buffer);
+                    listing[tossme-1].setupStory(line, lineMod);
+                }
+            }
         }
     } // DONT TOUCH THIS ONE EITHER
     masterlist.close();
+    vector<Save> save;
+    {
+        int tossme = 0;
+        ifstream savedlist("saved.list");
+        if (!savedlist.is_open()) {cout << "saved.list is missing"; exit(1);}
+        while (getline(savedlist, line)) {
+            if (line != "") {
+                ++tossme;
+                Save temp_save_buffer;
+                save.push_back(temp_save_buffer);
+                save[tossme - 1].setupSave(line);
+            }
+        }
+        savedlist.close();
+    }
+
 
     if (ID_COUNTER < 1) {
 
         cls();
+        cout << color("red", 3);
         cout << "master.list can not be empty" << endl;
+        cout << color("reset", 0);
         exit(1);
     }
     
@@ -765,6 +1109,7 @@ int main() {
 
     do
     {
+
         cls();
         cout << LONGTITLE << "\n";
         cout << COPYRIGHT << "\n\n";
@@ -773,39 +1118,37 @@ int main() {
         cout << "you can customize with your own silly words! You can make it serious, funny,\n";
         cout << "creative or just downright dirty! The laughter is best shared with friends!\n";
         cout << endl;
-        cout << "Commands:\n<back> <next> <quit> <view> <wiki> <make>" << endl;
+        cout << "Commands:\n" << color("yellow", 3) << "<back> <next>" << color("red", 3) <<" <quit> " << color("green", 3) << "<view> " << color("magenta", 3) << "<wiki> " << color("blue", 3) << "<make>" << color("red", 3) << " <delete> " << color("reset", 0);
+        cout << c[cr(gen)] << "<" << c[cr(gen)] << "s" << c[cr(gen)] << "t" << c[cr(gen)] << "a" << c[cr(gen)] << "r" << c[cr(gen)] << "s" << c[cr(gen)] << ">" << color("reset", 0) << endl;
         cout << endl;
-        cout << "Choose a story:\n";
+        cout << "Choose a " << color("blue", 3) << "story" << color("reset", 0) << ":\n";
 
         pagemarker = (page - 1) * 10 + 1;
 
-        for (int x = pagemarker; x <= pagemarker + 9 and x <= ID_COUNTER ; x++)
-            cout << "(" << x << ") " << listing[x-1].heading << endl; 
+        for (int x = pagemarker; x <= pagemarker + 9 && x <= listing.size() ; x++)
+            cout << "(" << x << ") " << color("blue", 3) << listing[x-1].heading << color("reset", 0) << endl; 
 
-        cout << "\nPage " << page << " of " << pages;
+        cout << "\nPage " << color("yellow", 3) << page << color("reset", 0) << " of " << color("yellow", 3) << pages << color("reset", 0);
         cout << "\nType a number or command: ";
+        cout << color("green", 3);
         cin >> choice;
+        cout << color("reset", 0);
         
-        try {
-            selection = stoi(choice);
-        }
+        try {selection = stoi(choice);}
         catch (const std::invalid_argument&) {}
         catch (const std::out_of_range&) {}
 
         if (choice == "back" and page > 1) {page = --page;}
-
         if (choice == "next" and page < pages) {page = ++page;}
-
         if (choice == "view") {savedScreen();}
-
         if (choice == "wiki") {wikiMenu(library);}
-
         if (choice == "make") {Story temp_story_buffer; listing.push_back(temp_story_buffer); listing.back() = makeScreen();}
+        if (choice == "delete") {deleteScreen(listing, save);}
+        if (choice == "stars") {starScreen();}
 
         //view saved
         
-        if ((selection > 0) and (selection <= ID_COUNTER))
-            answerScreen(listing[selection-1], library);
+        if ((selection > 0) and (selection <= listing.size())) {playStory(listing[selection-1], library, save);}
     selection = 0;
     } while (choice != "quit");
 
@@ -818,11 +1161,21 @@ int main() {
 ideas: 
 
 making title screen animations? using my new msleep function I made just for this.
-maybe using math to make cheap animations..? using only strings tho.
+   ascii stars heheheh
 
-making saved (only saved) content deletable (hence why they have a different extension)
-including txt files generated from playing the game.
+make it so when transitioning between certain screens theres a couple secs of ascii stars
 
-rewrite all the dumbass error messages and threatening sounding warnings so app is more professional
+rewrite all visible strings so app is more professional
+
+write 8 more stories to include with the base game so its not empty.
+
+figure out more wiki options to add: pronoun, pronouns, pos_pronoun, body_part
+
+chatgpt integration through APIs??? but it'd have to be guided and controlled through the software.
+unsure if I really think this is a good idea or not, but we'll see :)
+
+sift through each line of code and look for potential errors/bugs to catch.
+
+STAY ON TOP OF MEMORY LEAKS WITH THESE VECTORS WE ALREADY HAD TWO INCIDENTS BRO!!
 
 */
